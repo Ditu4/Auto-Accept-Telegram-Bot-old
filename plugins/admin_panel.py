@@ -105,13 +105,13 @@ async def handle_acceptall(bot: Client, message: Message):
 
 
 @Client.on_message(filters.private & filters.command('declineall') & filters.user(Config.ADMIN))
-async def handle_declineall(bot:Client, message: Message):
+async def handle_declineall(bot: Client, message: Message):
     ms = await message.reply_text("**Please Wait...**", reply_to_message_id=message.id)
     chat_ids = await db.get_channel(Config.ADMIN)
-    
+
     if len(list(chat_ids)) == 0:
         return await ms.edit("**I'm not admin in any Channel or Group yet !**")
-        
+
     button = []
     for id in chat_ids:
         info = await bot.get_chat(id)
@@ -119,18 +119,34 @@ async def handle_declineall(bot:Client, message: Message):
             f"{info.title} {str(info.type).split('.')[1]}", callback_data=f'declineallchat_{id}')])
 
     await ms.edit("Select Channel or Group Bellow Where you want to accept pending request\n\nBelow Channels or Group I'm Admin there", reply_markup=InlineKeyboardMarkup(button))
-    
-    
+
+
 @Client.on_callback_query(filters.regex('^acceptallchat_'))
 async def handle_accept_pending_request(bot: Client, update: CallbackQuery):
     await update.message.edit("**Please Wait Accepting all the peding requests. ♻️**")
     chat_id = update.data.split('_')[1]
     try:
-        await user.approve_all_chat_join_requests(chat_id=chat_id)
-    except Exception as e:
-        return await update.message.edit(f"**Something Went Wrong 😵\n\n error ❗ ➜ __{e}__\n\n **ERROR !")
+        while True:
+            try:
+                await user.approve_all_chat_join_requests(chat_id=chat_id)
+            except FloodWait as t:
+                asyncio.sleep(t.value)
+                await user.approve_all_chat_join_requests(chat_id=chat_id)
+            except Exception as e:
+                continue
+    except FloodWait as s:
+        asyncio.sleep(s.value)
+        while True:
+            try:
+                await user.approve_all_chat_join_requests(chat_id=chat_id)
+            except FloodWait as t:
+                asyncio.sleep(t.value)
+                await user.approve_all_chat_join_requests(chat_id=chat_id)
+            except Exception as e:
+                break
 
     await update.message.edit("**Task Completed** ✓ **Approved ✅ All The Pending Join Request**")
+
 
 @Client.on_callback_query(filters.regex('^declineallchat_'))
 async def handle_delcine_pending_request(bot: Client, update: CallbackQuery):
@@ -142,4 +158,3 @@ async def handle_delcine_pending_request(bot: Client, update: CallbackQuery):
         return await update.message.edit(f"**Something Went Wrong 😵\n\n error ❗ ➜ __{e}__\n\n **ERROR !")
 
     await update.message.edit("**Task Completed** ✓ **Declined ❌ All The Pending Join Request**")
-    
