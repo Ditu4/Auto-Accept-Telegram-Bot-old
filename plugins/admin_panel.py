@@ -9,7 +9,7 @@ import time
 import asyncio
 import logging
 import datetime
-
+from pyromod.exceptions import ListenerTimeout
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -131,34 +131,63 @@ async def handle_declineall(bot: Client, message: Message):
 
 @Client.on_callback_query(filters.regex('^acceptallchat_'))
 async def handle_accept_pending_request(bot: Client, update: CallbackQuery):
-    await update.message.edit("**Please Wait Accepting all the peding requests. ♻️**")
+    await update.message.delete()
     chat_id = update.data.split('_')[1]
+    pending_request_number = 0
+
     try:
-        while True:
+        number_of_pending_request = await bot.ask(chat_id= update.from_user.id, text='**Please Enter the total number of join pending request of user in this channel **\n\n__E.g •> like in in a channel there are 195 pending request then you will have to enter 195__\n\n<b>⦿ Developer:</b> <a href=https://t.me/Snowball_Official>ѕησωвαℓℓ ❄️</a>', filters=filters.text, timeout=30, disable_web_page_preview=True)
+    except ListenerTimeout:
+        await update.message.reply_text("**Your Request time out\n\n use /acceptall again... ❗**", reply_to_message_id=update.message.id)
+    except Exception as e:
+        print(e)
+    
+    if str(number_of_pending_request.text).isnumeric():
+        ms = await update.message.reply_text("**Please Wait Accepting all the peding requests. ♻️**", reply_to_message_id=number_of_pending_request.id)
+        while pending_request_number <= int(number_of_pending_request.text):
             try:
                 await user.approve_all_chat_join_requests(chat_id=chat_id)
             except FloodWait as t:
                 asyncio.sleep(t.value)
                 await user.approve_all_chat_join_requests(chat_id=chat_id)
-            except Exception as e:
-                logging.error(str(e))
-    except:
-        return await update.message.edit("**Task Completed** ✓ **Approved ✅ All The Pending Join Request**")
+            except:
+                pass
+            
+            pending_request_number+= 1
+    else:
+        return await update.message.reply_text("**⚠️ Please Enter Number not Text **\n\n Try Again... by using /acceptall")
+
+    await ms.delete()
+    await update.message.reply_text("**Task Completed** ✓ **Approved ✅ All The Pending Join Request**", reply_to_message_id=number_of_pending_request.id)
 
 
 @Client.on_callback_query(filters.regex('^declineallchat_'))
 async def handle_delcine_pending_request(bot: Client, update: CallbackQuery):
     await update.message.edit("**Please Wait Declining all the peding requests. ♻️**")
     chat_id = update.data.split('_')[1]
+    pending_request_number = 0
+
     try:
-        while True:
+        number_of_pending_request = await bot.ask(chat_id= update.from_user.id, text='**Please Enter the total number of join pending request of user in this channel **\n\n__E.g •> like in in a channel there are 195 pending request then you will have to enter 195__\n\n<b>⦿ Developer:</b> <a href=https://t.me/Snowball_Official>ѕησωвαℓℓ ❄️</a>', filters=filters.text, timeout=30, disable_web_page_preview=True)
+    except ListenerTimeout:
+        await update.message.reply_text("**Your Request time out\n\n use /acceptall again... ❗**", reply_to_message_id=update.message.id)
+    except Exception as e:
+        print(e)
+    
+    if str(number_of_pending_request.text).isnumeric():
+        ms = await update.message.reply_text("**Please Wait Declining all the peding requests. ♻️**", reply_to_message_id=number_of_pending_request.id)
+        while pending_request_number <= int(number_of_pending_request.text):
             try:
-                await user.decline_all_chat_join_requests(chat_id=chat_id)
+                await user.approve_all_chat_join_requests(chat_id=chat_id)
             except FloodWait as t:
                 asyncio.sleep(t.value)
-                await user.decline_all_chat_join_requests(chat_id=chat_id)
-            except Exception as e:
-                logging.error(str(e))
+                await user.approve_all_chat_join_requests(chat_id=chat_id)
+            except:
+                pass
+            
+            pending_request_number+= 1
+    else:
+        return await update.message.reply_text("**⚠️ Please Enter Number not Text **\n\n Try Again... by using /acceptall")
 
-    except:
-        return await update.message.edit("**Task Completed** ✓ **Declined ❌ All The Pending Join Request**")
+    await ms.delete()
+    await update.message.reply_text("**Task Completed** ✓ **Declined ❌ All The Pending Join Request**", reply_to_message_id=number_of_pending_request.id)
