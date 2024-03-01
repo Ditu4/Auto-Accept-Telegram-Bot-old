@@ -40,13 +40,15 @@ async def approve_func(bot, message):
 @Client.on_chat_join_request(filters.group | filters.channel)
 async def handle_autoAccept(bot: Client, message: ChatJoinRequest):
     admin_permission = await db.get_bool_auto_accept(Config.ADMIN)
-    if admin_permission:
+    admin_channel_permission = await db.get_admin_channels()
+    print(admin_channel_permission[f'{message.chat.id}'])
+    if admin_permission and admin_channel_permission[f'{message.chat.id}']:
         try:
             await approve_func(bot, message)
         except FloodWait:
             await approve_func(bot, message)
-
-
+                
+                
 @Client.on_chat_member_updated()
 async def handle_chat(bot: Client, update: ChatMemberUpdated):
     left_user = update.old_chat_member
@@ -82,7 +84,7 @@ async def handle_chat(bot: Client, update: ChatMemberUpdated):
             if update.new_chat_member.status == enums.ChatMemberStatus.ADMINISTRATOR:
                 # Add the channel to the bot's list
                 await db.set_channel(Config.ADMIN, chat_id)
-                print(f"Bot was made admin in channel: {chat_id}")
+                await db.set_admin_channel(chat_id, True)
             
     except:
         if update.old_chat_member.user.id == bot.me.id:
@@ -93,5 +95,5 @@ async def handle_chat(bot: Client, update: ChatMemberUpdated):
             if update.old_chat_member.status in [enums.ChatMemberStatus.LEFT, enums.ChatMemberStatus.BANNED, enums.ChatMemberStatus.ADMINISTRATOR]:
                 # Remove the channel from the bot's list
                 await db.remove_channel(Config.ADMIN, chat_id)
-                print(f"Bot was removed from admin in channel: {chat_id}")
+                await db.remove_admin_channel(f'{chat_id}')
             
