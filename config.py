@@ -39,6 +39,7 @@ class TxT(object):
 ➜ /set_welcome - To set custom welcome message (support photo & video & animation or gif)
 ➜ /set_leave - To set custom leave message (support photo & video & animation or gif)
 ➜ /option - To toggle your welcome & leave message also auto accept (whether it'll show to user or not and will auto accept or not)
+➜ /auto_approves - To toggle your auto approve channel or group
 ➜ /status - To see status about bot
 ➜ /restart - To restart the bot
 ➜ /broadcast - To brodcast the users (only those user who has started your bot)
