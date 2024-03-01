@@ -22,7 +22,8 @@ class Database:
             bool_auto_accept=True,
             bool_welc=None,
             bool_leav=None,
-            channel=[]
+            channel=[],
+            admin_channels={},
         )
 
     def new_user(self, id):
@@ -85,6 +86,34 @@ class Database:
         user = await self.col.find_one({'id': int(id)})
         return user.get('bool_leav', None)
 
+    async def set_admin_channel(self, channel_id, condition):
+        user = await self.col.find_one({'id': int(Config.ADMIN)})
+        if user:
+            channels = user.get('admin_channels', {})
+            if channel_id not in channels:
+                channels.update({f'{channel_id}': condition})
+                await self.col.update_one({'id': int(Config.ADMIN)}, {'$set': {'admin_channels': channels}})
+
+    async def update_admin_channel(self, id, condition):
+        user = await self.col.find_one({'id': int(Config.ADMIN)})
+        if user:
+            channels = user.get('admin_channels', {})
+            if id in channels:
+                channels.update({f'{id}': condition})
+                await self.col.update_one({'id': int(Config.ADMIN)}, {'$set': {'admin_channels': channels}})
+
+    async def get_admin_channels(self):
+        user = await self.col.find_one({'id': int(Config.ADMIN)})
+        return user.get('admin_channels', {})
+
+    async def remove_admin_channel(self, channel_id):
+        user = await self.col.find_one({'id': int(Config.ADMIN)})
+        if user:
+            channels = user.get('admin_channels', {})
+            if channel_id in channels:
+                channels.pop(channel_id)
+                await self.col.update_one({'id': int(Config.ADMIN)}, {'$set': {'admin_channels': channels}})
+
     async def set_channel(self, user_id, channel_id):
         user = await self.col.find_one({'id': int(user_id)})
         if user:
@@ -96,7 +125,7 @@ class Database:
     async def get_channel(self, id):
         user = await self.col.find_one({'id': int(id)})
         return user.get('channel', [])
-    
+
     async def remove_channel(self, user_id, channel_id):
         user = await self.col.find_one({'id': int(user_id)})
         if user:
